@@ -30,7 +30,13 @@ function App() {
     try {
       const ffmpeg = ffmpegRef.current;
 
-      // 2. Only load if it's NOT already loaded (saves time & data!)
+      // NEW: Let's actually see what FFmpeg is doing in the background!
+      // Open your console (F12) and you'll see every step.
+      ffmpeg.on("log", ({ message }) => {
+        console.log("[FFmpeg]:", message);
+      });
+
+      // 2. Only load if it's NOT already loaded
       if (!ffmpeg.loaded) {
         const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
         await ffmpeg.load({
@@ -47,8 +53,9 @@ function App() {
 
       await ffmpeg.writeFile("input.mp4", await fetchFile(videoFile));
 
-      // Extract frame at 1 second
+      // 3. THE FIX: Add "-y" right at the start to force overwrite!
       await ffmpeg.exec([
+        "-y", // <--- THIS SAVES YOUR SANITY
         "-i",
         "input.mp4",
         "-ss",
