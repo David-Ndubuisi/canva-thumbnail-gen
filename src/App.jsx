@@ -15,37 +15,60 @@ function App() {
   };
 
   const extractFrame = async () => {
+    // 1. Check if the browser is actually allowed to run FFmpeg
+    if (!window.crossOriginIsolated) {
+      console.error(
+        "Security headers are missing! Check your _headers file or vite.config.js",
+      );
+      alert(
+        "Browser security blocked the video processor. Check the console for help.",
+      );
+      return;
+    }
+
     setIsProcessing(true);
-    const ffmpeg = ffmpegRef.current;
+    try {
+      const ffmpeg = ffmpegRef.current;
 
-    const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(
-        `${baseURL}/ffmpeg-core.wasm`,
-        "application/wasm",
-      ),
-    });
+      // 2. Only load if it's NOT already loaded (saves time & data!)
+      if (!ffmpeg.loaded) {
+        const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
+        await ffmpeg.load({
+          coreURL: await toBlobURL(
+            `${baseURL}/ffmpeg-core.js`,
+            "text/javascript",
+          ),
+          wasmURL: await toBlobURL(
+            `${baseURL}/ffmpeg-core.wasm`,
+            "application/wasm",
+          ),
+        });
+      }
 
-    await ffmpeg.writeFile("input.mp4", await fetchFile(videoFile));
+      await ffmpeg.writeFile("input.mp4", await fetchFile(videoFile));
 
-    await ffmpeg.exec([
-      "-i",
-      "input.mp4",
-      "-ss",
-      "00:00:01",
-      "-frames:v",
-      "1",
-      "out.png",
-    ]);
+      // Extract frame at 1 second
+      await ffmpeg.exec([
+        "-i",
+        "input.mp4",
+        "-ss",
+        "00:00:01",
+        "-frames:v",
+        "1",
+        "out.png",
+      ]);
 
-    const data = await ffmpeg.readFile("out.png");
-    const url = URL.createObjectURL(
-      new Blob([data.buffer], { type: "image/png" }),
-    );
-
-    setThumbnail(url);
-    setIsProcessing(false);
+      const data = await ffmpeg.readFile("out.png");
+      const url = URL.createObjectURL(
+        new Blob([data.buffer], { type: "image/png" }),
+      );
+      setThumbnail(url);
+    } catch (error) {
+      console.error("FFmpeg Error:", error);
+      alert("Failed to process video. See console for details.");
+    } finally {
+      setIsProcessing(false); // ALWAYS turn off the loader
+    }
   };
 
   // --- DOWNLOAD LOGIC ---
