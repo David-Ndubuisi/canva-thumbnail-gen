@@ -15,11 +15,14 @@ function App() {
   };
 
   const extractFrame = async () => {
-    // 1. Check if the browser is actually allowed to run FFmpeg
-    if (!window.crossOriginIsolated) {
-      console.error(
-        "Security headers are missing! Check your _headers file or vite.config.js",
-      );
+  // Use a type assertion to bypass the "Property does not exist" error
+  const isIsolated = (window).crossOriginIsolated;
+
+  if (!isIsolated) {
+    console.error("Security headers are missing!");
+    alert("Check your Vite config or _headers file.");
+    return;
+  }
       alert(
         "Browser security blocked the video processor. Check the console for help.",
       );
