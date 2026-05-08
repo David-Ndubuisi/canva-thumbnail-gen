@@ -5,110 +5,99 @@ import "./App.css";
 
 function App() {
   const [videoFile, setVideoFile] = useState(null);
-  const [thumbnails, setThumbnails] = useState([]); // Array to hold multiple frames
-  const [selectedThumbnail, setSelectedThumbnail] = useState(null); // The chosen one
+  const [thumbnail, setThumbnail] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const ffmpegRef = useRef(new FFmpeg());
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-    if (file) {
-      setVideoFile(file);
-      // Reset state on new upload
-      setThumbnails([]);
-      setSelectedThumbnail(null);
-    }
-  };
-
-  // Helper function to silently get video duration
-  const getVideoDuration = (file) => {
-    return new Promise((resolve) => {
-      const video = document.createElement("video");
-      video.preload = "metadata";
-      video.onloadedmetadata = () => {
-        window.URL.revokeObjectURL(video.src);
-        resolve(video.duration);
-      };
-      video.src = URL.createObjectURL(file);
-    });
+    if (file) setVideoFile(file);
   };
 
   const extractFrame = async () => {
-    const isIsolated = window.crossOriginIsolated;
+  // Use a type assertion to bypass the "Property does not exist" error
+  const isIsolated = (window).crossOriginIsolated;
 
-    if (!isIsolated) {
-      console.error("Security headers are missing!");
-      alert("Check your Vite config or _headers file.");
+  if (!isIsolated) {
+    console.error("Security headers are missing!");
+    alert("Check your Vite config or _headers file.");
+    return;
+  }
+      alert(
+        "Browser security blocked the video processor. Check the console for help.",
+      );
       return;
     }
 
     setIsProcessing(true);
-    setThumbnails([]); // Clear old thumbnails
-    setSelectedThumbnail(null);
-
     try {
-      const duration = await getVideoDuration(videoFile);
       const ffmpeg = ffmpegRef.current;
 
+      // NEW: Let's actually see what FFmpeg is doing in the background!
+      // Open your console (F12) and you'll see every step.
       ffmpeg.on("log", ({ message }) => {
         console.log("[FFmpeg]:", message);
       });
 
+      // 2. Only load if it's NOT already loaded
       if (!ffmpeg.loaded) {
         const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
         await ffmpeg.load({
-          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+          coreURL: await toBlobURL(
+            `${baseURL}/ffmpeg-core.js`,
+            "text/javascript",
+          ),
+          wasmURL: await toBlobURL(
+            `${baseURL}/ffmpeg-core.wasm`,
+            "application/wasm",
+          ),
         });
       }
 
       await ffmpeg.writeFile("input.mp4", await fetchFile(videoFile));
 
-      const numFrames = 5;
-      const interval = duration / (numFrames + 1); // Get 5 equidistant points
-      const generatedThumbs = [];
+      // 3. THE FIX: Add "-y" right at the start to force overwrite!
+      await ffmpeg.exec([
+        "-y", // <--- THIS SAVES YOUR SANITY
+        "-i",
+        "input.mp4",
+        "-ss",
+        "00:00:01",
+        "-frames:v",
+        "1",
+        "out.png",
+      ]);
 
-      for (let i = 1; i <= numFrames; i++) {
-        const targetTime = interval * i;
-        // Format seconds into HH:MM:SS for FFmpeg
-        const timeString = new Date(targetTime * 1000).toISOString().slice(11, 19);
-        const outName = `out_${i}.png`;
-
-        await ffmpeg.exec([
-          "-y",
-          "-i", "input.mp4",
-          "-ss", timeString,
-          "-frames:v", "1",
-          outName,
-        ]);
-
-        const data = await ffmpeg.readFile(outName);
-        const url = URL.createObjectURL(new Blob([data.buffer], { type: "image/png" }));
-        generatedThumbs.push({ id: i, url });
-      }
-
-      setThumbnails(generatedThumbs);
+      const data = await ffmpeg.readFile("out.png");
+      const url = URL.createObjectURL(
+        new Blob([data.buffer], { type: "image/png" }),
+      );
+      setThumbnail(url);
     } catch (error) {
       console.error("FFmpeg Error:", error);
       alert("Failed to process video. See console for details.");
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false); // ALWAYS turn off the loader
     }
   };
 
   // --- DOWNLOAD LOGIC ---
   const handleDownload = () => {
-    if (!selectedThumbnail) return;
+    if (!thumbnail) return;
     const link = document.createElement("a");
-    link.href = selectedThumbnail;
+    link.href = thumbnail;
     link.download = "youtube_thumbnail_raw.png";
     link.click();
   };
 
   // --- CANVA REDIRECT LOGIC ---
   const handleDesignInCanva = () => {
-    if (!selectedThumbnail) return;
+    if (!thumbnail) return;
+
+    // 1. Auto-download the image so the user has it ready
     handleDownload();
+
+    // 2. Open Canva's YouTube Thumbnail creator in a new tab
     window.open("https://www.canva.com/create/youtube-thumbnails/", "_blank");
   };
 
@@ -117,8 +106,8 @@ function App() {
       {isProcessing && (
         <div className="overlay">
           <div className="spinner"></div>
-          <p>EXTRACTING MULTIPLE FRAMES...</p>
-          <small>Generating your timeline</small>
+          <p>PROCESSING VIDEO...</p>
+          <small>Extracting high-quality frames</small>
         </div>
       )}
 
@@ -145,37 +134,30 @@ function App() {
             <div className="file-info">
               <p>Ready: {videoFile.name}</p>
               <button onClick={extractFrame} className="process-btn">
-                Generate Filmstrip
+                Generate Preview
               </button>
             </div>
           )}
         </div>
 
-        {/* NEW HORIZONTAL FILMSTRIP PRESENTATION */}
-        {thumbnails.length > 0 && (
+        {thumbnail && (
           <div className="card preview-card">
-            <h3 style={{ marginBottom: "1.5rem" }}>Select Your Hero Frame</h3>
-            <div className="filmstrip-container">
-              {thumbnails.map((thumb) => (
-                <div
-                  key={thumb.id}
-                  className={`filmstrip-item ${selectedThumbnail === thumb.url ? "selected" : ""}`}
-                  onClick={() => setSelectedThumbnail(thumb.url)}
-                >
-                  <img src={thumb.url} alt={`Extracted frame ${thumb.id}`} />
-                </div>
-              ))}
-            </div>
+            <h3>Resulting Frame</h3>
+            <img
+              src={thumbnail}
+              alt="Extracted frame"
+              style={{ width: "100%", borderRadius: "12px" }}
+            />
           </div>
         )}
       </main>
 
-      {/* ONLY RENDER IF A FRAME IS CLICKED */}
-      {selectedThumbnail && (
+      {thumbnail && (
         <div className="action-bar">
           <button onClick={handleDownload} className="download-btn">
             <i className="bx bx-download"></i> Download Raw
           </button>
+
           <button onClick={handleDesignInCanva} className="canva-btn">
             Edit in Canva
           </button>
