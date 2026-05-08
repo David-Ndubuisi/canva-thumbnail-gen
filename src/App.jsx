@@ -5,22 +5,22 @@ import "./App.css";
 
 function App() {
   const [videoFile, setVideoFile] = useState(null);
-  const [thumbnails, setThumbnails] = useState([]); // Array to hold multiple frames
-  const [selectedThumbnail, setSelectedThumbnail] = useState(null); // The chosen one
+  const [thumbnails, setThumbnails] = useState([]);
+  const [selectedThumbnail, setSelectedThumbnail] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isStudioMode, setIsStudioMode] = useState(false); // NEW STATE
   const ffmpegRef = useRef(new FFmpeg());
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
       setVideoFile(file);
-      // Reset state on new upload
       setThumbnails([]);
       setSelectedThumbnail(null);
+      setIsStudioMode(false);
     }
   };
 
-  // Helper function to silently get video duration
   const getVideoDuration = (file) => {
     return new Promise((resolve) => {
       const video = document.createElement("video");
@@ -43,7 +43,7 @@ function App() {
     }
 
     setIsProcessing(true);
-    setThumbnails([]); // Clear old thumbnails
+    setThumbnails([]);
     setSelectedThumbnail(null);
 
     try {
@@ -57,33 +57,45 @@ function App() {
       if (!ffmpeg.loaded) {
         const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
         await ffmpeg.load({
-          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+          coreURL: await toBlobURL(
+            `${baseURL}/ffmpeg-core.js`,
+            "text/javascript",
+          ),
+          wasmURL: await toBlobURL(
+            `${baseURL}/ffmpeg-core.wasm`,
+            "application/wasm",
+          ),
         });
       }
 
       await ffmpeg.writeFile("input.mp4", await fetchFile(videoFile));
 
       const numFrames = 5;
-      const interval = duration / (numFrames + 1); // Get 5 equidistant points
+      const interval = duration / (numFrames + 1);
       const generatedThumbs = [];
 
       for (let i = 1; i <= numFrames; i++) {
         const targetTime = interval * i;
-        // Format seconds into HH:MM:SS for FFmpeg
-        const timeString = new Date(targetTime * 1000).toISOString().slice(11, 19);
+        const timeString = new Date(targetTime * 1000)
+          .toISOString()
+          .slice(11, 19);
         const outName = `out_${i}.png`;
 
         await ffmpeg.exec([
           "-y",
-          "-i", "input.mp4",
-          "-ss", timeString,
-          "-frames:v", "1",
+          "-i",
+          "input.mp4",
+          "-ss",
+          timeString,
+          "-frames:v",
+          "1",
           outName,
         ]);
 
         const data = await ffmpeg.readFile(outName);
-        const url = URL.createObjectURL(new Blob([data.buffer], { type: "image/png" }));
+        const url = URL.createObjectURL(
+          new Blob([data.buffer], { type: "image/png" }),
+        );
         generatedThumbs.push({ id: i, url });
       }
 
@@ -96,7 +108,6 @@ function App() {
     }
   };
 
-  // --- DOWNLOAD LOGIC ---
   const handleDownload = () => {
     if (!selectedThumbnail) return;
     const link = document.createElement("a");
@@ -105,7 +116,6 @@ function App() {
     link.click();
   };
 
-  // --- CANVA REDIRECT LOGIC ---
   const handleDesignInCanva = () => {
     if (!selectedThumbnail) return;
     handleDownload();
@@ -151,10 +161,11 @@ function App() {
           )}
         </div>
 
-        {/* NEW HORIZONTAL FILMSTRIP PRESENTATION */}
         {thumbnails.length > 0 && (
           <div className="card preview-card">
-            <h3 style={{ marginBottom: "1.5rem" }}>Select Your Preferred Frame</h3>
+            <h3 style={{ marginBottom: "1.5rem" }}>
+              Select Your Preferred Frame
+            </h3>
             <div className="filmstrip-container">
               {thumbnails.map((thumb) => (
                 <div
@@ -168,9 +179,55 @@ function App() {
             </div>
           </div>
         )}
+
+        {/* --- NEW STUDIO MODE SECTION --- */}
+        {selectedThumbnail && (
+          <div className="card studio-card">
+            <div className="studio-header">
+              <h3>Hero Preview</h3>
+              <button
+                className={`toggle-btn ${isStudioMode ? "active" : ""}`}
+                onClick={() => setIsStudioMode(!isStudioMode)}
+              >
+                <i
+                  className={`bx ${isStudioMode ? "bx-toggle-right" : "bx-toggle-left"}`}
+                ></i>
+                Studio Mode: {isStudioMode ? "ON" : "OFF"}
+              </button>
+            </div>
+
+            <div className="studio-canvas">
+              <div className="yt-mock-card">
+                <div className="yt-thumbnail-wrapper">
+                  <img
+                    src={selectedThumbnail}
+                    alt="Hero Frame"
+                    className="hero-img"
+                  />
+
+                  {isStudioMode && (
+                    <>
+                      <div className="yt-play-btn"></div>
+                      <div className="yt-timestamp">14:05</div>
+                    </>
+                  )}
+                </div>
+
+                {isStudioMode && (
+                  <div className="yt-metadata">
+                    <div className="yt-avatar"></div>
+                    <div className="yt-text-group">
+                      <h4>The Ultimate WOW FACTOR Presentation</h4>
+                      <p>Client Channel • 1.4M views • 2 hours ago</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* ONLY RENDER IF A FRAME IS CLICKED */}
       {selectedThumbnail && (
         <div className="action-bar">
           <button onClick={handleDownload} className="download-btn">
