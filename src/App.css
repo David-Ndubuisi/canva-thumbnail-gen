@@ -196,3 +196,66 @@ body {
 .download-btn:hover {
   background: #333;
 }
+
+/* --- THE FILMSTRIP PRESENTATION --- */
+.preview-card {
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+}
+
+.filmstrip-container {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding: 1rem 0 2rem 0;
+  /* Hide scrollbar for a cleaner look */
+  scrollbar-width: none; 
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+}
+
+.filmstrip-container::-webkit-scrollbar {
+  display: none; 
+}
+
+.filmstrip-item {
+  flex: 0 0 280px; /* Fixed width for horizontal scrolling */
+  height: 158px; /* 16:9 aspect ratio approx */
+  border-radius: 12px;
+  cursor: pointer;
+  overflow: hidden;
+  border: 3px solid transparent;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+              border-color 0.3s ease, 
+              box-shadow 0.3s ease;
+  background-color: #2a2a2a;
+}
+
+.filmstrip-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.3s ease;
+}
+
+.filmstrip-item:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+.filmstrip-item:hover img {
+  opacity: 0.8;
+}
+
+/* The juxtaposition of the glowing border against the dark background */
+.filmstrip-item.selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 25px rgba(100, 108, 255, 0.5);
+  transform: scale(1.05);
+  z-index: 2;
+}
+
+.filmstrip-item.selected img {
+  opacity: 1;
+}
