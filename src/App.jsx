@@ -217,7 +217,7 @@ function App() {
                   <div className="yt-metadata">
                     <div className="yt-avatar"></div>
                     <div className="yt-text-group">
-                      <h4>The Ultimate WOW FACTOR Presentation</h4>
+                      <h4>The Ultimate THUMBNAIl!!</h4>
                       <p>Client Channel • 1.4M views • 2 hours ago</p>
                     </div>
                   </div>
