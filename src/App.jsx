@@ -10,6 +10,11 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isStudioMode, setIsStudioMode] = useState(false); // NEW STATE
   const ffmpegRef = useRef(new FFmpeg());
+  const [filters, setFilters] = useState({
+    saturation: 100,
+    contrast: 100,
+    hasBorder: false,
+  });
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -122,6 +127,14 @@ function App() {
     window.open("https://www.canva.com/create/youtube-thumbnails/", "_blank");
   };
 
+  const toggleFilter = (type) => {
+    setFilters((prev) => ({
+      ...prev,
+      [type]:
+        type === "hasBorder" ? !prev.hasBorder : prev[type] === 100 ? 150 : 100,
+    }));
+  };
+
   return (
     <div className="dashboard">
       {isProcessing && (
@@ -184,16 +197,39 @@ function App() {
         {selectedThumbnail && (
           <div className="card studio-card">
             <div className="studio-header">
-              <h3>Hero Preview</h3>
-              <button
-                className={`toggle-btn ${isStudioMode ? "active" : ""}`}
-                onClick={() => setIsStudioMode(!isStudioMode)}
-              >
-                <i
-                  className={`bx ${isStudioMode ? "bx-toggle-right" : "bx-toggle-left"}`}
-                ></i>
-                Studio Mode: {isStudioMode ? "ON" : "OFF"}
-              </button>
+              <h3>Thumbnail Preview</h3>
+              <div className="enhancement-group">
+                <button
+                  className={`filter-btn ${filters.saturation > 100 ? "active" : ""}`}
+                  onClick={() => toggleFilter("saturation")}
+                >
+                  <i className="bx bxs-magic-wand"></i> Boost Color
+                </button>
+                <button
+                  className={`filter-btn ${filters.contrast > 100 ? "active" : ""}`}
+                  onClick={() => toggleFilter("contrast")}
+                >
+                  <i className="bx bxs-adjust"></i> Pop Contrast
+                </button>
+                <button
+                  className={`filter-btn ${filters.hasBorder ? "active" : ""}`}
+                  onClick={() => toggleFilter("hasBorder")}
+                >
+                  <i className="bx bx-border-all"></i> Add Border
+                </button>
+
+                <div className="divider"></div>
+
+                <button
+                  className={`toggle-btn ${isStudioMode ? "active" : ""}`}
+                  onClick={() => setIsStudioMode(!isStudioMode)}
+                >
+                  <i
+                    className={`bx ${isStudioMode ? "bx-toggle-right" : "bx-toggle-left"}`}
+                  ></i>
+                  Studio Mode
+                </button>
+              </div>
             </div>
 
             <div className="studio-canvas">
@@ -203,6 +239,13 @@ function App() {
                     src={selectedThumbnail}
                     alt="Hero Frame"
                     className="hero-img"
+                    style={{
+                      filter: `saturate(${filters.saturation}%) contrast(${filters.contrast}%)`,
+                      outline: filters.hasBorder
+                        ? "8px solid var(--primary)"
+                        : "none",
+                      outlineOffset: "-8px",
+                    }}
                   />
 
                   {isStudioMode && (
