@@ -154,7 +154,7 @@ function App() {
         {/* NEW HORIZONTAL FILMSTRIP PRESENTATION */}
         {thumbnails.length > 0 && (
           <div className="card preview-card">
-            <h3 style={{ marginBottom: "1.5rem" }}>Select Your Hero Frame</h3>
+            <h3 style={{ marginBottom: "1.5rem" }}>Select Your Preferred Frame</h3>
             <div className="filmstrip-container">
               {thumbnails.map((thumb) => (
                 <div
