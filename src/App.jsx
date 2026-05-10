@@ -86,6 +86,7 @@ function App() {
           .slice(11, 19);
         const outName = `out_${i}.png`;
 
+        /*
         await ffmpeg.exec([
           "-y",
           "-i",
@@ -94,6 +95,18 @@ function App() {
           timeString,
           "-frames:v",
           "1",
+          outName,
+        ]); */
+
+        await ffmpeg.exec([
+          "-ss",
+          timeString, // Keep this first for speed!
+          "-i",
+          "input.mp4",
+          "-frames:v",
+          "1", // We removed the "-vf scale=640:-1" line entirely
+          "-q:v",
+          "2",
           outName,
         ]);
 
