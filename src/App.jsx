@@ -75,7 +75,11 @@ function App() {
 
       await ffmpeg.writeFile("input.mp4", await fetchFile(videoFile));
 
-      const numFrames = 5;
+      // --- DYNAMIC FRAME LOGIC ---
+      // duration is in seconds. 5 minutes = 300 seconds.
+      // If it's longer than 5 minutes, extract 10 frames. Otherwise, stick to 5.
+      const numFrames = duration > 300 ? 10 : 5;
+
       const interval = duration / (numFrames + 1);
       const generatedThumbs = [];
 
