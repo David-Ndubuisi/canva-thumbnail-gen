@@ -6,6 +6,7 @@ import "./App.css";
 function App() {
   const [videoFile, setVideoFile] = useState(null);
   const [thumbnails, setThumbnails] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
   const [selectedThumbnail, setSelectedThumbnail] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isStudioMode, setIsStudioMode] = useState(false); // NEW STATE
@@ -15,6 +16,31 @@ function App() {
     contrast: 100,
     hasBorder: false,
   });
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("video/")) {
+      // Treat the dropped file exactly like a standard upload
+      setVideoFile(file);
+      setThumbnails([]);
+      setSelectedThumbnail(null);
+      setIsStudioMode(false);
+    } else {
+      alert("Please drop a valid video file.");
+    }
+  };
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -162,34 +188,89 @@ function App() {
         </div>
       )}
 
-      <header>
-        <h1>Canva Thumbnail Generator</h1>
-        <p>Upload a video and get some pretty cool looking thumbnails.</p>
-      </header>
-
       <main>
-        <div className="card">
-          <input
-            type="file"
-            accept="video/*"
-            onChange={handleFileChange}
-            id="v-up"
-            hidden
-          />
-          <label htmlFor="v-up" className="upload-button">
-            <i className="bx bx-cloud-upload"></i>
-            {videoFile ? "Change Video" : "Upload Video"}
-          </label>
-
-          {videoFile && (
-            <div className="file-info">
-              <p>Ready: {videoFile.name}</p>
-              <button onClick={extractFrame} className="process-btn">
-                Generate Filmstrip
-              </button>
+        {/* NEW SPLIT-SCREEN HERO SECTION */}
+        <div className="hero-section">
+          {/* Left Side: Copywriting */}
+          <div className="hero-text">
+            <h1>
+              Extract <span className="text-gradient">Thumbnails</span>
+              <br />
+              Instantly.
+            </h1>
+            <p>
+              Upload your video and let our engine generate high-fidelity,
+              YouTube-ready frames in seconds.
+            </p>
+            <div className="hero-badges">
+              <span className="badge">
+                <i className="bx bx-check-circle"></i> Lightning Fast
+              </span>
+              <span className="badge">
+                <i className="bx bx-check-circle"></i> 100% Browser-Based
+              </span>
             </div>
-          )}
+          </div>
+
+          {/* Right Side: The Interactive Dropzone */}
+          <div
+            className={`upload-dropzone ${isDragging ? "dragging" : ""}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <div className="dropzone-content">
+              {videoFile ? (
+                <div className="file-ready-state">
+                  <div className="success-icon">
+                    <i className="bx bxs-file-archive"></i>
+                  </div>
+                  <h3>Video Loaded</h3>
+                  <p className="filename">{videoFile.name}</p>
+
+                  <div className="dropzone-actions">
+                    <button
+                      onClick={extractFrame}
+                      className="process-btn primary-btn"
+                    >
+                      Generate Filmstrip{" "}
+                      <i className="bx bx-right-arrow-alt"></i>
+                    </button>
+
+                    {/* Hidden input for the "Change Video" link */}
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleFileChange}
+                      id="v-up"
+                      hidden
+                    />
+                    <label htmlFor="v-up" className="text-link">
+                      or select a different file
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <div className="upload-prompt-state">
+                  <input
+                    type="file"
+                    accept="video/*"
+                    onChange={handleFileChange}
+                    id="v-up"
+                    hidden
+                  />
+                  <label htmlFor="v-up" className="upload-button primary-btn">
+                    <i className="bx bx-cloud-upload"></i> Upload Video
+                  </label>
+                  <p className="drop-text">or drop a file here</p>
+                  <p className="supported-text">Supports MP4, MOV, WEBM</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+
+        {/* ... The rest of your code (filmstrip, studio mode) remains unchanged below here ... */}
 
         {thumbnails.length > 0 && (
           <div className="card preview-card">
