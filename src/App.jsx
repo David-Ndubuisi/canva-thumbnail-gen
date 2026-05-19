@@ -9,12 +9,14 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedThumbnail, setSelectedThumbnail] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isStudioMode, setIsStudioMode] = useState(false); // NEW STATE
+  const [isStudioMode, setIsStudioMode] = useState(false);
   const ffmpegRef = useRef(new FFmpeg());
+
+  // Refactored state: Now holds actual numeric values for standard CSS filters
   const [filters, setFilters] = useState({
-    saturation: 100,
+    brightness: 100,
     contrast: 100,
-    hasBorder: false,
+    saturation: 100,
   });
 
   const handleDragOver = (e) => {
@@ -32,7 +34,6 @@ function App() {
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith("video/")) {
-      // Treat the dropped file exactly like a standard upload
       setVideoFile(file);
       setThumbnails([]);
       setSelectedThumbnail(null);
@@ -101,11 +102,7 @@ function App() {
 
       await ffmpeg.writeFile("input.mp4", await fetchFile(videoFile));
 
-      // --- DYNAMIC FRAME LOGIC ---
-      // duration is in seconds. 5 minutes = 300 seconds.
-      // If it's longer than 5 minutes, extract 10 frames. Otherwise, stick to 5.
       const numFrames = duration > 300 ? 10 : 5;
-
       const interval = duration / (numFrames + 1);
       const generatedThumbs = [];
 
@@ -116,25 +113,13 @@ function App() {
           .slice(11, 19);
         const outName = `out_${i}.png`;
 
-        /*
         await ffmpeg.exec([
-          "-y",
-          "-i",
-          "input.mp4",
           "-ss",
           timeString,
-          "-frames:v",
-          "1",
-          outName,
-        ]); */
-
-        await ffmpeg.exec([
-          "-ss",
-          timeString, // Keep this first for speed!
           "-i",
           "input.mp4",
           "-frames:v",
-          "1", // We removed the "-vf scale=640:-1" line entirely
+          "1",
           "-q:v",
           "2",
           outName,
@@ -170,12 +155,17 @@ function App() {
     window.open("https://www.canva.com/create/youtube-thumbnails/", "_blank");
   };
 
-  const toggleFilter = (type) => {
+  // Handler for changes on individual sliders
+  const handleFilterChange = (filterType, value) => {
     setFilters((prev) => ({
       ...prev,
-      [type]:
-        type === "hasBorder" ? !prev.hasBorder : prev[type] === 100 ? 150 : 100,
+      [filterType]: parseInt(value, 10),
     }));
+  };
+
+  // Reset function to revert options back to native levels
+  const resetFilters = () => {
+    setFilters({ brightness: 100, contrast: 100, saturation: 100 });
   };
 
   return (
@@ -189,9 +179,7 @@ function App() {
       )}
 
       <main>
-        {/* NEW SPLIT-SCREEN HERO SECTION */}
         <div className="hero-section">
-          {/* Left Side: Copywriting */}
           <div className="hero-text">
             <h1>
               Extract <span className="text-gradient">Thumbnails</span>
@@ -212,7 +200,6 @@ function App() {
             </div>
           </div>
 
-          {/* Right Side: The Interactive Dropzone */}
           <div
             className={`upload-dropzone ${isDragging ? "dragging" : ""}`}
             onDragOver={handleDragOver}
@@ -236,8 +223,6 @@ function App() {
                       Generate Filmstrip{" "}
                       <i className="bx bx-right-arrow-alt"></i>
                     </button>
-
-                    {/* Hidden input for the "Change Video" link */}
                     <input
                       type="file"
                       accept="video/*"
@@ -270,8 +255,6 @@ function App() {
           </div>
         </div>
 
-        {/* ... The rest of your code (filmstrip, studio mode) remains unchanged below here ... */}
-
         {thumbnails.length > 0 && (
           <div className="card preview-card">
             <h3 style={{ marginBottom: "1.5rem" }}>
@@ -291,78 +274,120 @@ function App() {
           </div>
         )}
 
-        {/* --- NEW STUDIO MODE SECTION --- */}
+        {/* --- STUDIO MODE & FINE TUNING SECTION --- */}
         {selectedThumbnail && (
           <div className="card studio-card">
-            <div className="studio-header">
-              <h3>Thumbnail Preview</h3>
-              <div className="enhancement-group">
-                <button
-                  className={`filter-btn ${filters.saturation > 100 ? "active" : ""}`}
-                  onClick={() => toggleFilter("saturation")}
-                >
-                  <i className="bx bxs-magic-wand"></i> Boost Color
-                </button>
-                <button
-                  className={`filter-btn ${filters.contrast > 100 ? "active" : ""}`}
-                  onClick={() => toggleFilter("contrast")}
-                >
-                  <i className="bx bxs-adjust"></i> Pop Contrast
-                </button>
-                <button
-                  className={`filter-btn ${filters.hasBorder ? "active" : ""}`}
-                  onClick={() => toggleFilter("hasBorder")}
-                >
-                  <i className="bx bx-border-all"></i> Add Border
-                </button>
+            <div className="studio-workspace">
+              {/* LEFT SIDE: FINE-TUNING PANEL CONTROL */}
+              <div className="editor-panel">
+                <div className="panel-header">
+                  <h4>
+                    <i className="bx bx-slider-alt"></i> Fine Tuning
+                  </h4>
+                  <button onClick={resetFilters} className="reset-link-btn">
+                    Reset
+                  </button>
+                </div>
 
-                <div className="divider"></div>
+                <div className="control-group">
+                  <div className="control-label">
+                    <span>Exposure</span>
+                    <span className="value-indicator">
+                      {filters.brightness}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="50"
+                    max="175"
+                    value={filters.brightness}
+                    onChange={(e) =>
+                      handleFilterChange("brightness", e.target.value)
+                    }
+                    className="premium-slider"
+                  />
+                </div>
+
+                <div className="control-group">
+                  <div className="control-label">
+                    <span>Contrast</span>
+                    <span className="value-indicator">{filters.contrast}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="50"
+                    max="175"
+                    value={filters.contrast}
+                    onChange={(e) =>
+                      handleFilterChange("contrast", e.target.value)
+                    }
+                    className="premium-slider"
+                  />
+                </div>
+
+                <div className="control-group">
+                  <div className="control-label">
+                    <span>Vibrancy / Saturation</span>
+                    <span className="value-indicator">
+                      {filters.saturation}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="25"
+                    max="200"
+                    value={filters.saturation}
+                    onChange={(e) =>
+                      handleFilterChange("saturation", e.target.value)
+                    }
+                    className="premium-slider"
+                  />
+                </div>
+
+                <div className="panel-divider"></div>
 
                 <button
-                  className={`toggle-btn ${isStudioMode ? "active" : ""}`}
+                  className={`studio-toggle-bar-btn ${isStudioMode ? "active" : ""}`}
                   onClick={() => setIsStudioMode(!isStudioMode)}
                 >
                   <i
                     className={`bx ${isStudioMode ? "bx-toggle-right" : "bx-toggle-left"}`}
                   ></i>
-                  Studio Mode
+                  Studio Overlay Mode
                 </button>
               </div>
-            </div>
 
-            <div className="studio-canvas">
-              <div className="yt-mock-card">
-                <div className="yt-thumbnail-wrapper">
-                  <img
-                    src={selectedThumbnail}
-                    alt="Hero Frame"
-                    className="hero-img"
-                    style={{
-                      filter: `saturate(${filters.saturation}%) contrast(${filters.contrast}%)`,
-                      outline: filters.hasBorder
-                        ? "8px solid var(--primary)"
-                        : "none",
-                      outlineOffset: "-8px",
-                    }}
-                  />
+              {/* RIGHT SIDE: CANVAS VIEW */}
+              <div className="studio-canvas">
+                <div className="yt-mock-card">
+                  <div className="yt-thumbnail-wrapper">
+                    <img
+                      src={selectedThumbnail}
+                      alt="Hero Frame"
+                      className="hero-img"
+                      style={{
+                        filter: `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturation}%)`,
+                      }}
+                    />
+
+                    {isStudioMode && (
+                      <>
+                        <div className="yt-play-btn"></div>
+                        <div className="yt-timestamp">14:05</div>
+                      </>
+                    )}
+                  </div>
 
                   {isStudioMode && (
-                    <>
-                      <div className="yt-play-btn"></div>
-                      <div className="yt-timestamp">14:05</div>
-                    </>
+                    <div className="yt-metadata">
+                      <div className="yt-avatar"></div>
+                      <div className="yt-text-group">
+                        <h4>The Ultimate THUMBNAIL!!</h4>
+                        <p>Client Channel • 1.4M views • 2 hours ago</p>
+                      </div>
+                    </div>
                   )}
                 </div>
-
-                {isStudioMode && (
-                  <div className="yt-metadata">
-                    <div className="yt-avatar"></div>
-                    <div className="yt-text-group">
-                      <h4>The Ultimate THUMBNAIL!!</h4>
-                      <p>Client Channel • 1.4M views • 2 hours ago</p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
