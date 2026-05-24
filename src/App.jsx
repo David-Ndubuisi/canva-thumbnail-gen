@@ -18,6 +18,23 @@ function App() {
     contrast: 100,
     saturation: 100,
   });
+  // NEW: State for the active preset
+  const [activePreset, setActivePreset] = useState("none");
+  // Add these right below your activePreset state
+  const [isTextEnabled, setIsTextEnabled] = useState(false);
+  const [overlayText, setOverlayText] = useState("");
+  const [textSize, setTextSize] = useState(48);
+
+  // NEW: The CSS definitions for our preset filters
+  const PRESETS = {
+    none: "",
+    bw: "grayscale(100%) contrast(120%)",
+    cinematic:
+      "contrast(125%) saturate(110%) brightness(90%) sepia(15%) hue-rotate(-5deg)",
+    vintage: "sepia(70%) contrast(110%) brightness(90%) hue-rotate(-15deg)",
+    cyberpunk:
+      "saturate(200%) contrast(120%) hue-rotate(45deg) brightness(95%)",
+  };
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -149,6 +166,68 @@ function App() {
     link.click();
   };
 
+  const handleDownloadEdited = () => {
+    if (!selectedThumbnail) return;
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      // 1. Apply image filters
+      const manualFilters = `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturation}%)`;
+      const presetFilter = PRESETS[activePreset];
+      ctx.filter = `${manualFilters} ${presetFilter}`.trim();
+
+      // 2. Draw the image
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // 3. Draw the Text Overlay (if enabled)
+      if (isTextEnabled && overlayText) {
+        // Reset filter so the text remains pure white and crisp
+        ctx.filter = "none";
+
+        // Calculate scale difference between the DOM preview and actual video file
+        const domImg = document.querySelector(".hero-img");
+        const scale = canvas.width / domImg.clientWidth;
+
+        // Setup typography
+        const scaledFontSize = textSize * scale;
+        ctx.font = `800 ${scaledFontSize}px "Outfit", sans-serif`;
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+
+        // Heavy drop shadow for authentic thumbnail readability
+        ctx.shadowColor = "rgba(0,0,0,0.8)";
+        ctx.shadowBlur = 15 * scale;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 5 * scale;
+
+        // Draw a black outline stroke
+        ctx.lineWidth = 4 * scale;
+        ctx.strokeStyle = "#000000";
+
+        // Place text at 8% from the top of the canvas
+        const yPosition = canvas.height * 0.08;
+        const textValue = overlayText.toUpperCase();
+
+        ctx.strokeText(textValue, canvas.width / 2, yPosition);
+        ctx.fillText(textValue, canvas.width / 2, yPosition);
+      }
+
+      const link = document.createElement("a");
+      link.download = "youtube_thumbnail_edited.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    };
+
+    img.src = selectedThumbnail;
+  };
+
   const handleDesignInCanva = () => {
     if (!selectedThumbnail) return;
     handleDownload();
@@ -255,21 +334,54 @@ function App() {
           </div>
         </div>
 
+        {/* UPDATED HORIZONTAL FILMSTRIP PRESENTATION WITH NAVIGATION ARROWS */}
         {thumbnails.length > 0 && (
           <div className="card preview-card">
             <h3 style={{ marginBottom: "1.5rem" }}>
               Select Your Preferred Frame
             </h3>
-            <div className="filmstrip-container">
-              {thumbnails.map((thumb) => (
-                <div
-                  key={thumb.id}
-                  className={`filmstrip-item ${selectedThumbnail === thumb.url ? "selected" : ""}`}
-                  onClick={() => setSelectedThumbnail(thumb.url)}
-                >
-                  <img src={thumb.url} alt={`Extracted frame ${thumb.id}`} />
-                </div>
-              ))}
+
+            <div className="filmstrip-slider-wrapper">
+              {/* Left Navigation Arrow */}
+              <button
+                className="scroll-arrow left-arrow"
+                onClick={() => {
+                  const container = document.getElementById(
+                    "filmstrip-container-id",
+                  );
+                  if (container) container.scrollLeft -= 300; // Scrolls back by roughly one frame width
+                }}
+                aria-label="Scroll Left"
+              >
+                <i className="bx bx-chevron-left"></i>
+              </button>
+
+              {/* The Scrollable Strip */}
+              <div className="filmstrip-container" id="filmstrip-container-id">
+                {thumbnails.map((thumb) => (
+                  <div
+                    key={thumb.id}
+                    className={`filmstrip-item ${selectedThumbnail === thumb.url ? "selected" : ""}`}
+                    onClick={() => setSelectedThumbnail(thumb.url)}
+                  >
+                    <img src={thumb.url} alt={`Extracted frame ${thumb.id}`} />
+                  </div>
+                ))}
+              </div>
+
+              {/* Right Navigation Arrow */}
+              <button
+                className="scroll-arrow right-arrow"
+                onClick={() => {
+                  const container = document.getElementById(
+                    "filmstrip-container-id",
+                  );
+                  if (container) container.scrollLeft += 300; // Scrolls forward by roughly one frame width
+                }}
+                aria-label="Scroll Right"
+              >
+                <i className="bx bx-chevron-right"></i>
+              </button>
             </div>
           </div>
         )}
@@ -284,10 +396,55 @@ function App() {
                   <h4>
                     <i className="bx bx-slider-alt"></i> Fine Tuning
                   </h4>
-                  <button onClick={resetFilters} className="reset-link-btn">
-                    Reset
+                  <button
+                    onClick={() => {
+                      resetFilters();
+                      setActivePreset("none");
+                    }}
+                    className="reset-link-btn"
+                  >
+                    Reset All
                   </button>
                 </div>
+
+                {/* NEW: PRESET SELECTORS */}
+                <div className="control-label" style={{ marginBottom: "10px" }}>
+                  <span>Quick Presets</span>
+                </div>
+                <div className="preset-group">
+                  <button
+                    className={`preset-btn ${activePreset === "none" ? "active" : ""}`}
+                    onClick={() => setActivePreset("none")}
+                  >
+                    Normal
+                  </button>
+                  <button
+                    className={`preset-btn ${activePreset === "cinematic" ? "active" : ""}`}
+                    onClick={() => setActivePreset("cinematic")}
+                  >
+                    Cinematic
+                  </button>
+                  <button
+                    className={`preset-btn ${activePreset === "bw" ? "active" : ""}`}
+                    onClick={() => setActivePreset("bw")}
+                  >
+                    B&W
+                  </button>
+                  <button
+                    className={`preset-btn ${activePreset === "vintage" ? "active" : ""}`}
+                    onClick={() => setActivePreset("vintage")}
+                  >
+                    Vintage
+                  </button>
+                  <button
+                    className={`preset-btn ${activePreset === "cyberpunk" ? "active" : ""}`}
+                    onClick={() => setActivePreset("cyberpunk")}
+                  >
+                    Cyberpunk
+                  </button>
+                </div>
+
+                <div className="panel-divider"></div>
 
                 <div className="control-group">
                   <div className="control-label">
@@ -345,6 +502,48 @@ function App() {
                 </div>
 
                 <div className="panel-divider"></div>
+                <div className="control-header-flex">
+                  <div className="control-label" style={{ marginBottom: 0 }}>
+                    <span>Headline Text</span>
+                  </div>
+                  <button
+                    className={`toggle-btn micro ${isTextEnabled ? "active" : ""}`}
+                    onClick={() => setIsTextEnabled(!isTextEnabled)}
+                  >
+                    {isTextEnabled ? "ON" : "OFF"}
+                  </button>
+                </div>
+
+                {isTextEnabled && (
+                  <div className="text-editor-box">
+                    <input
+                      type="text"
+                      placeholder="ENTER HEADLINE..."
+                      maxLength={20}
+                      value={overlayText}
+                      onChange={(e) => setOverlayText(e.target.value)}
+                      className="text-input"
+                    />
+                    <div
+                      className="control-group"
+                      style={{ marginTop: "1.2rem", marginBottom: 0 }}
+                    >
+                      <div className="control-label">
+                        <span>Text Size</span>
+                        <span className="value-indicator">{textSize}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="24"
+                        max="84"
+                        value={textSize}
+                        onChange={(e) => setTextSize(parseInt(e.target.value))}
+                        className="premium-slider"
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="panel-divider"></div>
 
                 <button
                   className={`studio-toggle-bar-btn ${isStudioMode ? "active" : ""}`}
@@ -366,9 +565,20 @@ function App() {
                       alt="Hero Frame"
                       className="hero-img"
                       style={{
-                        filter: `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturation}%)`,
+                        // Combine manual sliders AND the active preset
+                        filter:
+                          `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturation}%) ${PRESETS[activePreset]}`.trim(),
                       }}
                     />
+
+                    {isTextEnabled && overlayText && (
+                      <div
+                        className="thumbnail-text-overlay"
+                        style={{ fontSize: `${textSize}px` }}
+                      >
+                        {overlayText.toUpperCase()}
+                      </div>
+                    )}
 
                     {isStudioMode && (
                       <>
@@ -396,9 +606,23 @@ function App() {
 
       {selectedThumbnail && (
         <div className="action-bar">
-          <button onClick={handleDownload} className="download-btn">
-            <i className="bx bx-download"></i> Download Raw
+          <button onClick={handleDownload} className="download-btn secondary">
+            Raw (Original)
           </button>
+          <button
+            onClick={handleDownloadEdited}
+            className="download-btn primary-action"
+          >
+            <i className="bx bx-download"></i> Download Edited
+          </button>
+          <div
+            style={{
+              width: "1px",
+              height: "24px",
+              background: "#444",
+              margin: "0 10px",
+            }}
+          ></div>
           <button onClick={handleDesignInCanva} className="canva-btn">
             Edit in Canva
           </button>

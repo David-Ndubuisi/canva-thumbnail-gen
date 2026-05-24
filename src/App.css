@@ -810,3 +810,201 @@ body {
     flex: none;
   }
 }
+
+/* --- PRESET BUTTONS --- */
+.preset-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.preset-btn {
+  background: rgba(255, 255, 255, 0.05);
+  color: #a0a0a0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-main);
+  transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.preset-btn.active {
+  background: rgba(100, 108, 255, 0.2);
+  border-color: var(--primary);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(100, 108, 255, 0.2);
+}
+
+/* --- UPDATED ACTION BAR BUTTONS --- */
+.download-btn.secondary {
+  border-color: rgba(255, 255, 255, 0.05);
+  color: #888;
+  font-size: 0.9rem;
+  padding: 0.8rem 1rem;
+}
+
+.download-btn.secondary:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.download-btn.primary-action {
+  background: #ffffff;
+  color: #000000;
+  border: none;
+}
+
+.download-btn.primary-action:hover {
+  background: #e0e0e0;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+}
+
+/* --- HORIZONTAL FILMSTRIP ARROW NAVIGATION --- */
+.filmstrip-slider-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* Base style for both arrows */
+.scroll-arrow {
+  position: absolute;
+  top: calc(50% - 20px); /* Centers vertically (height is 40px) */
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(28, 28, 28, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Position adjustments to float on top of the container edges */
+.left-arrow {
+  left: -15px;
+}
+
+.right-arrow {
+  right: -15px;
+}
+
+/* Hover and active micro-interactions */
+.scroll-arrow:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(100, 108, 255, 0.4);
+}
+
+.scroll-arrow:active {
+  transform: scale(0.95);
+}
+
+/* Arrow Icon adjustments (removing native margin rules from standard bx icons) */
+.scroll-arrow i {
+  margin-right: 0 !important;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+/* Ensure the layout has breathing room for absolute elements */
+.preview-card {
+  overflow: visible !important; /* Allows arrows to slightly pop out of the edges for that pro feel */
+}
+
+/* --- TEXT EDITOR PANEL --- */
+.control-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.toggle-btn.micro {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+}
+
+.text-editor-box {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  animation: slideDownFade 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.text-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  font-family: var(--font-main);
+  font-weight: 700;
+  font-size: 0.95rem;
+  outline: none;
+  box-sizing: border-box;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+}
+
+.text-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 10px rgba(100, 108, 255, 0.2);
+}
+
+.text-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* --- LIVE CANVAS TEXT OVERLAY --- */
+.thumbnail-text-overlay {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  text-align: center;
+  color: #ffffff;
+  font-weight: 800;
+  line-height: 1.1;
+  z-index: 5;
+  white-space: nowrap;
+  pointer-events: none;
+  /* Simulating the heavy stroke and shadow from the canvas export */
+  text-shadow:
+    0 5px 15px rgba(0, 0, 0, 0.8),
+    0 0 5px rgba(0, 0, 0, 1);
+  -webkit-text-stroke: 1px black;
+}
