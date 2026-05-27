@@ -25,6 +25,11 @@ function App() {
   const [overlayText, setOverlayText] = useState("");
   const [textSize, setTextSize] = useState(48);
 
+  // NEW: Font and Position States
+  const [textFont, setTextFont] = useState('"Outfit", sans-serif');
+  const [textPosX, setTextPosX] = useState(50); // Starts at 50% (Center)
+  const [textPosY, setTextPosY] = useState(8); // Starts at 8% (Top)
+
   // NEW: The CSS definitions for our preset filters
   const PRESETS = {
     none: "",
@@ -186,37 +191,35 @@ function App() {
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
       // 3. Draw the Text Overlay (if enabled)
+      // 3. Draw the Text Overlay (if enabled)
       if (isTextEnabled && overlayText) {
-        // Reset filter so the text remains pure white and crisp
         ctx.filter = "none";
 
-        // Calculate scale difference between the DOM preview and actual video file
         const domImg = document.querySelector(".hero-img");
         const scale = canvas.width / domImg.clientWidth;
 
-        // Setup typography
+        // Apply dynamic font and scaled size
         const scaledFontSize = textSize * scale;
-        ctx.font = `800 ${scaledFontSize}px "Outfit", sans-serif`;
+        ctx.font = `800 ${scaledFontSize}px ${textFont}`;
         ctx.fillStyle = "#ffffff";
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
 
-        // Heavy drop shadow for authentic thumbnail readability
         ctx.shadowColor = "rgba(0,0,0,0.8)";
         ctx.shadowBlur = 15 * scale;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 5 * scale;
 
-        // Draw a black outline stroke
         ctx.lineWidth = 4 * scale;
         ctx.strokeStyle = "#000000";
 
-        // Place text at 8% from the top of the canvas
-        const yPosition = canvas.height * 0.08;
+        // Convert percentage sliders to exact canvas pixels
+        const xPosition = canvas.width * (textPosX / 100);
+        const yPosition = canvas.height * (textPosY / 100);
         const textValue = overlayText.toUpperCase();
 
-        ctx.strokeText(textValue, canvas.width / 2, yPosition);
-        ctx.fillText(textValue, canvas.width / 2, yPosition);
+        ctx.strokeText(textValue, xPosition, yPosition);
+        ctx.fillText(textValue, xPosition, yPosition);
       }
 
       const link = document.createElement("a");
@@ -524,6 +527,35 @@ function App() {
                       onChange={(e) => setOverlayText(e.target.value)}
                       className="text-input"
                     />
+
+                    <div
+                      className="control-group"
+                      style={{ marginTop: "1.2rem", marginBottom: 0 }}
+                    >
+                      <div className="control-label">
+                        <span>Font Style</span>
+                      </div>
+                      <select
+                        value={textFont}
+                        onChange={(e) => setTextFont(e.target.value)}
+                        className="text-input select-input"
+                        style={{ padding: "0.6rem", cursor: "pointer" }}
+                      >
+                        <option value='"Outfit", sans-serif'>
+                          Outfit (Modern)
+                        </option>
+                        <option value="Impact, sans-serif">
+                          Impact (Classic Meme)
+                        </option>
+                        <option value='"Arial Black", sans-serif'>
+                          Arial Black (Heavy)
+                        </option>
+                        <option value='"Courier New", monospace'>
+                          Courier (Typewriter)
+                        </option>
+                      </select>
+                    </div>
+
                     <div
                       className="control-group"
                       style={{ marginTop: "1.2rem", marginBottom: 0 }}
@@ -538,6 +570,42 @@ function App() {
                         max="84"
                         value={textSize}
                         onChange={(e) => setTextSize(parseInt(e.target.value))}
+                        className="premium-slider"
+                      />
+                    </div>
+
+                    <div
+                      className="control-group"
+                      style={{ marginTop: "1.2rem", marginBottom: 0 }}
+                    >
+                      <div className="control-label">
+                        <span>Horizontal Position</span>
+                        <span className="value-indicator">{textPosX}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={textPosX}
+                        onChange={(e) => setTextPosX(parseInt(e.target.value))}
+                        className="premium-slider"
+                      />
+                    </div>
+
+                    <div
+                      className="control-group"
+                      style={{ marginTop: "1.2rem", marginBottom: 0 }}
+                    >
+                      <div className="control-label">
+                        <span>Vertical Position</span>
+                        <span className="value-indicator">{textPosY}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={textPosY}
+                        onChange={(e) => setTextPosY(parseInt(e.target.value))}
                         className="premium-slider"
                       />
                     </div>
@@ -574,7 +642,12 @@ function App() {
                     {isTextEnabled && overlayText && (
                       <div
                         className="thumbnail-text-overlay"
-                        style={{ fontSize: `${textSize}px` }}
+                        style={{
+                          fontSize: `${textSize}px`,
+                          fontFamily: textFont,
+                          left: `${textPosX}%`,
+                          top: `${textPosY}%`,
+                        }}
                       >
                         {overlayText.toUpperCase()}
                       </div>

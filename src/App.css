@@ -989,10 +989,10 @@ body {
 }
 
 /* --- LIVE CANVAS TEXT OVERLAY --- */
+/* --- LIVE CANVAS TEXT OVERLAY --- */
 .thumbnail-text-overlay {
   position: absolute;
-  top: 8%;
-  left: 50%;
+  /* Removed static top and left, now handled inline */
   transform: translateX(-50%);
   width: 90%;
   text-align: center;
@@ -1002,9 +1002,15 @@ body {
   z-index: 5;
   white-space: nowrap;
   pointer-events: none;
-  /* Simulating the heavy stroke and shadow from the canvas export */
   text-shadow:
     0 5px 15px rgba(0, 0, 0, 0.8),
     0 0 5px rgba(0, 0, 0, 1);
   -webkit-text-stroke: 1px black;
+}
+
+/* Optional: Removes native dropdown arrow styling for a cleaner look */
+.select-input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
