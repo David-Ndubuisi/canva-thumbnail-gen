@@ -353,6 +353,7 @@ body {
   background-size: contain;
   opacity: 0.9;
   transition: opacity 0.2s;
+  z-index: 10; /* ADD THIS LINE */
 }
 
 .yt-mock-card:hover .yt-play-btn {
@@ -370,6 +371,7 @@ body {
   padding: 3px 4px;
   border-radius: 4px;
   font-family: var(--font-main); /* Standard YT font stack */
+  z-index: 10; /* ADD THIS LINE */
 }
 
 .yt-metadata {
