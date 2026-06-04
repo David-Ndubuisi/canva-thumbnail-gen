@@ -24,6 +24,7 @@ function App() {
   const [isTextEnabled, setIsTextEnabled] = useState(false);
   const [overlayText, setOverlayText] = useState("");
   const [textSize, setTextSize] = useState(48);
+  const [hasShadow, setHasShadow] = useState(true); // Default to true
 
   // NEW: Font and Position States
   const [textFont, setTextFont] = useState('"Outfit", sans-serif');
@@ -191,7 +192,6 @@ function App() {
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
       // 3. Draw the Text Overlay (if enabled)
-      // 3. Draw the Text Overlay (if enabled)
       if (isTextEnabled && overlayText) {
         ctx.filter = "none";
 
@@ -205,10 +205,19 @@ function App() {
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
 
-        ctx.shadowColor = "rgba(0,0,0,0.8)";
-        ctx.shadowBlur = 15 * scale;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 5 * scale;
+        // DYNAMIC SHADOW CHECK FOR DOWNLOAD
+        if (hasShadow) {
+          ctx.shadowColor = "rgba(0,0,0,0.8)";
+          ctx.shadowBlur = 15 * scale;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 5 * scale;
+        } else {
+          // Explicitly turn off the canvas shadow
+          ctx.shadowColor = "transparent";
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+        }
 
         ctx.lineWidth = 4 * scale;
         ctx.strokeStyle = "#000000";
@@ -553,7 +562,24 @@ function App() {
                         <option value='"Courier New", monospace'>
                           Courier (Typewriter)
                         </option>
+                        <option value='"Pacifico", cursive'>
+                          Cursive (Pacifico)
+                        </option>
                       </select>
+                    </div>
+
+                    <div
+                      className="control-group"
+                      style={{ marginTop: "1.2rem", marginBottom: 0 }}
+                    >
+                      <label className="toggle-label">
+                        <input
+                          type="checkbox"
+                          checked={hasShadow}
+                          onChange={(e) => setHasShadow(e.target.checked)}
+                        />
+                        Text Shadow
+                      </label>
                     </div>
 
                     <div
@@ -647,9 +673,12 @@ function App() {
                           fontFamily: textFont,
                           left: `${textPosX}%`,
                           top: `${textPosY}%`,
+                          textShadow: hasShadow
+                            ? "3px 3px 10px rgba(0, 0, 0, 0.85)"
+                            : "none",
                         }}
                       >
-                        {overlayText.toUpperCase()}
+                        {overlayText}
                       </div>
                     )}
 
