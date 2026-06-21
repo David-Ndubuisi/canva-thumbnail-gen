@@ -11,6 +11,8 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isStudioMode, setIsStudioMode] = useState(false);
   const ffmpegRef = useRef(new FFmpeg());
+  // NEW: Aspect Ratio State
+  const [aspectRatio, setAspectRatio] = useState("16/9");
 
   // Refactored state: Now holds actual numeric values for standard CSS filters
   const [filters, setFilters] = useState({
@@ -180,16 +182,48 @@ function App() {
     const img = new Image();
 
     img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
+      let targetWidth = img.width;
+      let targetHeight = img.height;
+      let sourceX = 0;
+      let sourceY = 0;
+
+      // Parse the selected aspect ratio string (e.g., "16/9" -> 16 / 9)
+      const [ratioW, ratioH] = aspectRatio.split("/").map(Number);
+      const targetRatio = ratioW / ratioH;
+      const imgRatio = img.width / img.height;
+
+      // Calculate the Center-Crop coordinates
+      if (imgRatio > targetRatio) {
+        // Original image is wider than the requested ratio -> Crop the left/right sides
+        targetWidth = img.height * targetRatio;
+        sourceX = (img.width - targetWidth) / 2;
+      } else if (imgRatio < targetRatio) {
+        // Original image is taller than the requested ratio -> Crop the top/bottom
+        targetHeight = img.width / targetRatio;
+        sourceY = (img.height - targetHeight) / 2;
+      }
+
+      // Set the final downloaded image dimensions
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
 
       // 1. Apply image filters
       const manualFilters = `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturation}%)`;
       const presetFilter = PRESETS[activePreset];
       ctx.filter = `${manualFilters} ${presetFilter}`.trim();
 
-      // 2. Draw the image
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      // 2. Draw the image (utilizing the source clipping coordinates to center-crop)
+      ctx.drawImage(
+        img,
+        sourceX,
+        sourceY,
+        targetWidth,
+        targetHeight, // Source clipping
+        0,
+        0,
+        targetWidth,
+        targetHeight, // Destination placement
+      );
 
       // 3. Draw the Text Overlay (if enabled)
       if (isTextEnabled && overlayText) {
@@ -458,6 +492,38 @@ function App() {
 
                 <div className="panel-divider"></div>
 
+                <div className="control-label" style={{ marginBottom: "10px" }}>
+                  <span>Canvas Aspect Ratio</span>
+                </div>
+                <div className="preset-group">
+                  <button
+                    className={`preset-btn ${aspectRatio === "16/9" ? "active" : ""}`}
+                    onClick={() => setAspectRatio("16/9")}
+                  >
+                    16:9 (YouTube)
+                  </button>
+                  <button
+                    className={`preset-btn ${aspectRatio === "9/16" ? "active" : ""}`}
+                    onClick={() => setAspectRatio("9/16")}
+                  >
+                    9:16 (TikTok)
+                  </button>
+                  <button
+                    className={`preset-btn ${aspectRatio === "1/1" ? "active" : ""}`}
+                    onClick={() => setAspectRatio("1/1")}
+                  >
+                    1:1 (Insta Square)
+                  </button>
+                  <button
+                    className={`preset-btn ${aspectRatio === "4/5" ? "active" : ""}`}
+                    onClick={() => setAspectRatio("4/5")}
+                  >
+                    4:5 (Insta Portrait)
+                  </button>
+                </div>
+
+                <div className="panel-divider"></div>
+
                 <div className="control-group">
                   <div className="control-label">
                     <span>Exposure</span>
@@ -653,7 +719,10 @@ function App() {
               {/* RIGHT SIDE: CANVAS VIEW */}
               <div className="studio-canvas">
                 <div className="yt-mock-card">
-                  <div className="yt-thumbnail-wrapper">
+                  <div
+                    className="yt-thumbnail-wrapper"
+                    style={{ aspectRatio: aspectRatio }}
+                  >
                     <img
                       src={selectedThumbnail}
                       alt="Hero Frame"
