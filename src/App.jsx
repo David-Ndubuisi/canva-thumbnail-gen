@@ -504,19 +504,28 @@ function App() {
                   </button>
                   <button
                     className={`preset-btn ${aspectRatio === "9/16" ? "active" : ""}`}
-                    onClick={() => setAspectRatio("9/16")}
+                    onClick={() => {
+                      setAspectRatio("9/16");
+                      setIsStudioMode(false); // Turn off Studio Mode
+                    }}
                   >
                     9:16 (TikTok)
                   </button>
                   <button
                     className={`preset-btn ${aspectRatio === "1/1" ? "active" : ""}`}
-                    onClick={() => setAspectRatio("1/1")}
+                    onClick={() => {
+                      setAspectRatio("1/1");
+                      setIsStudioMode(false); // Turn off Studio Mode
+                    }}
                   >
                     1:1 (Insta Square)
                   </button>
                   <button
                     className={`preset-btn ${aspectRatio === "4/5" ? "active" : ""}`}
-                    onClick={() => setAspectRatio("4/5")}
+                    onClick={() => {
+                      setAspectRatio("4/5");
+                      setIsStudioMode(false); // Turn off Studio Mode
+                    }}
                   >
                     4:5 (Insta Portrait)
                   </button>
@@ -708,11 +717,16 @@ function App() {
                 <button
                   className={`studio-toggle-bar-btn ${isStudioMode ? "active" : ""}`}
                   onClick={() => setIsStudioMode(!isStudioMode)}
+                  disabled={aspectRatio !== "16/9"}
+                  style={{ 
+                    opacity: aspectRatio !== "16/9" ? 0.4 : 1, 
+                    cursor: aspectRatio !== "16/9" ? "not-allowed" : "pointer" 
+                  }}
                 >
                   <i
                     className={`bx ${isStudioMode ? "bx-toggle-right" : "bx-toggle-left"}`}
                   ></i>
-                  Studio Overlay Mode
+                  {aspectRatio === "16/9" ? "Studio Overlay Mode" : "Studio Mode (16:9 Only)"}
                 </button>
               </div>
 
@@ -751,7 +765,8 @@ function App() {
                       </div>
                     )}
 
-                    {isStudioMode && (
+                    {/* Only show overlay elements if Studio Mode is ON AND ratio is 16/9 */}
+                    {isStudioMode && aspectRatio === "16/9" && (
                       <>
                         <div className="yt-play-btn"></div>
                         <div className="yt-timestamp">14:05</div>
@@ -759,7 +774,8 @@ function App() {
                     )}
                   </div>
 
-                  {isStudioMode && (
+                  {/* Only show metadata if Studio Mode is ON AND ratio is 16/9 */}
+                  {isStudioMode && aspectRatio === "16/9" && (
                     <div className="yt-metadata">
                       <div className="yt-avatar"></div>
                       <div className="yt-text-group">
